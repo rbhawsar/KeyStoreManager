@@ -8,32 +8,26 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -43,8 +37,8 @@ import javafx.stage.StageStyle;
 /**
  * Currently supprots
  * <p>
- * keystore type = jceks <br>
- * Provider = SunJCE <br>
+ * keystore type = jks <br>
+ * Provider = Sun <br>
  * Certificate type = X.509
  * 
  * @author Rahul Bhawsar
@@ -59,15 +53,16 @@ public class KeyStoreManager extends Application
 
     private File KeyStoreFile = null;
 
-    private ListView<String> list = new ListView<String>();
-
     private Enumeration<String> aliases = null;
-
-    private ObservableList<String> data = FXCollections.observableArrayList();
 
     private MenuItem menuAddCertificate = null;
 
     private KeyStore keystore = null;
+
+    // To display certificates
+    private TextArea textArea;
+
+    private final String CERT_SEPERATOR = "\n**********************************\n**********************************\n";
 
     @Override
     public void start(final Stage primaryStage)
@@ -85,7 +80,7 @@ public class KeyStoreManager extends Application
             public void handle(ActionEvent actionEvent)
             {
                 // Close everything.
-                list.setVisible(false);
+                textArea.setVisible(false);
                 menuAddCertificate.setDisable(true);
             }
 
@@ -144,15 +139,15 @@ public class KeyStoreManager extends Application
             }
         });
         menuKeystore.getItems().addAll(menuOpen, menuClose, menuAddCertificate, menuCreate, menuExit);
-
+        textArea = new TextArea();
         menuBar.getMenus().addAll(menuKeystore);
-        VBox.setVgrow(list, Priority.ALWAYS);
+        VBox.setVgrow(textArea, Priority.ALWAYS);
         Scene scene = new Scene(vbox, 500, 400);
         ((VBox)scene.getRoot()).getChildren().addAll(menuBar);
 
-        list.setItems(data);
-        list.setVisible(false);// no data yet
-        vbox.getChildren().addAll(list);
+        textArea.setVisible(false);
+
+        vbox.getChildren().addAll(textArea);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -162,11 +157,10 @@ public class KeyStoreManager extends Application
         // Add the certificate to the keyStore.
         try (OutputStream op = new FileOutputStream(KeyStoreFile))
         {
-
             keystore.setCertificateEntry(alias, certificate);
-
             keystore.store(op, password);
-
+            textArea.appendText(CERT_SEPERATOR);
+            textArea.appendText("Alias=" + alias + "\n" + certificate.toString());
         }
         catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException ex)
         {
@@ -191,11 +185,12 @@ public class KeyStoreManager extends Application
             {
                 String alias = aliases.nextElement();
                 java.security.cert.Certificate cert = keystore.getCertificate(alias);
-                data.add("Alias=" + alias + "\n" + cert.toString());
+                textArea.appendText("Alias=" + alias + "\n" + cert.toString());
+                textArea.appendText(CERT_SEPERATOR);
             }
 
             // Data is loaded.
-            list.setVisible(true);
+            textArea.setVisible(true);
             // Now a certificate can be added.
             menuAddCertificate.setDisable(false);
 
