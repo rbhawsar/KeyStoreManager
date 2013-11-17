@@ -8,10 +8,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -31,6 +33,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -48,9 +51,9 @@ import javafx.stage.StageStyle;
  */
 public class KeyStoreManager extends Application
 {
-    private String keyStoreType = "jceks";// default value;
+    private String keyStoreType = "JKS";// default value;
 
-    private String provider = "SunJCE";// default value;
+    private String provider = "SUN";// default value;
 
     private char[] password;
 
@@ -120,7 +123,7 @@ public class KeyStoreManager extends Application
 
                         CertificateFactory cf = CertificateFactory.getInstance("X.509");
                         X509Certificate certificate = (X509Certificate)cf.generateCertificate(in);
-                        updateKeyStore(certificate);
+                        updateKeyStore(certificate, certFile.getName());
                     }
                 }
                 catch (CertificateException | IOException ex)
@@ -154,12 +157,14 @@ public class KeyStoreManager extends Application
         primaryStage.show();
     }
 
-    protected void updateKeyStore(X509Certificate certificate)
+    protected void updateKeyStore(X509Certificate certificate, String alias)
     {
         // Add the certificate to the keyStore.
         try (OutputStream op = new FileOutputStream(KeyStoreFile))
         {
-            keystore.setCertificateEntry("test", certificate);
+
+            keystore.setCertificateEntry(alias, certificate);
+
             keystore.store(op, password);
 
         }
@@ -185,12 +190,8 @@ public class KeyStoreManager extends Application
             while (aliases.hasMoreElements())
             {
                 String alias = aliases.nextElement();
-                if (keystore.isKeyEntry(alias) == false)
-                {
-                    java.security.cert.Certificate cert = keystore.getCertificate(alias);
-                    data.add("Alias=" + alias + "\n" + cert.toString());
-                }
-
+                java.security.cert.Certificate cert = keystore.getCertificate(alias);
+                data.add("Alias=" + alias + "\n" + cert.toString());
             }
 
             // Data is loaded.
@@ -209,11 +210,11 @@ public class KeyStoreManager extends Application
     public void getKeyStorePassword(final Stage primaryStage)
     {
         VBox vbox = new VBox();
-        final Stage stage = new Stage(StageStyle.UTILITY);
+        final Stage stage = new Stage(StageStyle.UNDECORATED);
         stage.setTitle("Enter Password");
         stage.setScene(new Scene(vbox, 200, 70));
 
-        Label label = new Label("Password");
+        Label label = new Label("Enter Key Store Password:");
         final PasswordField passwordField = new PasswordField();
 
         passwordField.setOnAction(new EventHandler<ActionEvent>()
