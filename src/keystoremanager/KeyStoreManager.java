@@ -101,7 +101,7 @@ public class KeyStoreManager extends Application
             }
 
         });
-        menuAddCertificate = new MenuItem("Add Certificate to Key Store");
+        menuAddCertificate = new MenuItem("Import Certificate in Key Store");
         menuAddCertificate.setDisable(true);
         menuAddCertificate.setOnAction(new EventHandler<ActionEvent>()
         {
